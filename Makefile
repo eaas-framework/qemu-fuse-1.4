@@ -163,10 +163,13 @@ libqemuutil.a: $(util-obj-y)
 ######################################################################
 
 qemu-img.o: qemu-img-cmds.h
+qemu-fuse.o: qemu-img-cmds.h
 
 qemu-img$(EXESUF): qemu-img.o $(block-obj-y) libqemuutil.a libqemustub.a
 qemu-nbd$(EXESUF): qemu-nbd.o $(block-obj-y) libqemuutil.a libqemustub.a
 qemu-io$(EXESUF): qemu-io.o cmd.o $(block-obj-y) libqemuutil.a libqemustub.a
+qemu-fuse$(EXESUF): qemu-fuse.o $(block-obj-y) libqemuutil.a libqemustub.a
+qemu-fuse$(EXESUF): LIBS += -lfuse
 
 qemu-bridge-helper$(EXESUF): qemu-bridge-helper.o
 

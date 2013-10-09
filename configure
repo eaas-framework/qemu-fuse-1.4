@@ -226,6 +226,7 @@ coroutine=""
 seccomp=""
 glusterfs=""
 virtio_blk_data_plane=""
+handlenet=""
 
 # parse CC options first
 for opt do
@@ -897,6 +898,10 @@ for opt do
   ;;
   --enable-virtio-blk-data-plane) virtio_blk_data_plane="yes"
   ;;
+  --enable-handlenet) handlenet="yes"
+  ;;
+  --disable-handlenet) handlenet="no"
+  ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -1144,6 +1149,8 @@ echo "  --with-coroutine=BACKEND coroutine backend. Supported options:"
 echo "                           gthread, ucontext, sigaltstack, windows"
 echo "  --enable-glusterfs       enable GlusterFS backend"
 echo "  --disable-glusterfs      disable GlusterFS backend"
+echo "  --enable-handlenet       enable HANDLE.NET resolution support"
+echo "  --disable-handlenet      disable HANDLE.NET resolution support"
 echo "  --enable-gcov            enable test coverage analysis with gcov"
 echo "  --gcov=GCOV              use specified gcov [$gcov_tool]"
 echo ""
@@ -2430,6 +2437,29 @@ EOF
   fi
 fi
 
+##########################################
+# handlenet probe
+if test "$handlenet" != "no" ; then
+  cat > $TMPC <<EOF
+#include <hdl/hdl.h>
+int main(void) {
+    (void) HDLInitResolver();
+    return 0;
+}
+EOF
+  handlenet_libs="-lhdl"
+  if compile_prog "" "$handlenet_libs" ; then
+    handlenet=yes
+    libs_tools="$handlenet_libs $libs_tools"
+    libs_softmmu="$handlenet_libs $libs_softmmu"
+  else
+    if test "$handlenet" = "yes" ; then
+      feature_not_found "HANDLE.NET resolution support"
+    fi
+    handlenet=no
+  fi
+fi
+
 #
 # Check for xxxat() functions when we are building linux-user
 # emulator.  This is done because older glibc versions don't
@@ -3382,6 +3412,7 @@ echo "seccomp support   $seccomp"
 echo "coroutine backend $coroutine"
 echo "GlusterFS support $glusterfs"
 echo "virtio-blk-data-plane $virtio_blk_data_plane"
+echo "HANDLE.NET support $handlenet"
 echo "gcov              $gcov_tool"
 echo "gcov enabled      $gcov"
 
@@ -3734,6 +3765,10 @@ fi
 
 if test "$virtio_blk_data_plane" = "yes" ; then
   echo "CONFIG_VIRTIO_BLK_DATA_PLANE=y" >> $config_host_mak
+fi
+
+if test "$handlenet" = "yes" ; then
+  echo "CONFIG_HANDLENET=y" >> $config_host_mak
 fi
 
 # USB host support

@@ -30,6 +30,7 @@
 #include "block/thread-pool.h"
 #include "qemu/iov.h"
 #include "raw-aio.h"
+#include "qemu/uri.h"
 
 #if defined(__APPLE__) && (__MACH__)
 #include <paths.h>
@@ -267,8 +268,19 @@ static int raw_open_common(BlockDriverState *bs, const char *filename,
 {
     BDRVRawState *s = bs->opaque;
     int fd, ret;
+    URI *uri;
+    char *file;
 
-    ret = raw_normalize_devicepath(&filename);
+    // try to parse filename as uri
+    uri = uri_parse(filename);
+    if (uri && uri->scheme && strncmp(uri->scheme, "file", 4) == 0) {
+        file = g_strdup(uri->path);
+        uri_free(uri);
+    } else {
+        file = g_strdup(filename);
+    }
+
+    ret = raw_normalize_devicepath((char const **)&file);
     if (ret != 0) {
         return ret;
     }
@@ -277,7 +289,7 @@ static int raw_open_common(BlockDriverState *bs, const char *filename,
     raw_parse_flags(bdrv_flags, &s->open_flags);
 
     s->fd = -1;
-    fd = qemu_open(filename, s->open_flags, 0644);
+    fd = qemu_open(file, s->open_flags, 0644);
     if (fd < 0) {
         ret = -errno;
         if (ret == -EROFS)
@@ -300,6 +312,7 @@ static int raw_open_common(BlockDriverState *bs, const char *filename,
     }
 #endif
 
+    g_free(file);
     return 0;
 }
 

@@ -273,7 +273,10 @@ static int raw_open_common(BlockDriverState *bs, const char *filename,
 
     // try to parse filename as uri
     uri = uri_parse(filename);
-    if (uri && uri->scheme && strncmp(uri->scheme, "file", 4) == 0) {
+    if (uri && uri->scheme && (strncmp(uri->scheme, "file", 4) == 0 ||
+                               strncmp(uri->scheme, "host_device", 11) == 0 ||
+                               strncmp(uri->scheme, "host_cdrom", 10) == 0 ||
+                               strncmp(uri->scheme, "host_floppy", 11) == 0)) {
         file = g_strdup(uri->path);
         uri_free(uri);
     } else {

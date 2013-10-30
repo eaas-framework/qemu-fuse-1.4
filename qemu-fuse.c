@@ -74,7 +74,7 @@ qemu_fuse_read(const char *path, char *buf, size_t size, off_t offset, struct fu
       size = (pd->size - offset);
     }
 
-    ret = bdrv_read(pd->bs, offset/BDRV_SECTOR_SIZE, (uint8_t*)buf, size/BDRV_SECTOR_SIZE);
+    ret = bdrv_pread(pd->bs, offset, (uint8_t*)buf, size);
 
     if(ret == 0){
       ret = size;
@@ -94,7 +94,7 @@ qemu_fuse_write(const char *path, const char *buf, size_t size, off_t offset, st
       size = (pd->size - offset);
     }
 
-    ret = bdrv_write(pd->bs, offset/BDRV_SECTOR_SIZE, (uint8_t*)buf, size/BDRV_SECTOR_SIZE);
+    ret = bdrv_pwrite(pd->bs, offset, (uint8_t*)buf, size);
     
     if(ret == 0){
       ret = size;

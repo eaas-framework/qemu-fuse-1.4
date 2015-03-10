@@ -227,6 +227,7 @@ seccomp=""
 glusterfs=""
 virtio_blk_data_plane=""
 handlenet=""
+libewf=""
 
 # parse CC options first
 for opt do
@@ -902,6 +903,10 @@ for opt do
   ;;
   --disable-handlenet) handlenet="no"
   ;;
+  --enable-libewf) libewf="yes"
+  ;;
+  --disable-libewf) libewf="no"
+  ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -1151,6 +1156,8 @@ echo "  --enable-glusterfs       enable GlusterFS backend"
 echo "  --disable-glusterfs      disable GlusterFS backend"
 echo "  --enable-handlenet       enable HANDLE.NET resolution support"
 echo "  --disable-handlenet      disable HANDLE.NET resolution support"
+echo "  --enable-libewf          enable libewf backend"
+echo "  --disable-libewf         disable libewf backend"
 echo "  --enable-gcov            enable test coverage analysis with gcov"
 echo "  --gcov=GCOV              use specified gcov [$gcov_tool]"
 echo ""
@@ -2460,6 +2467,29 @@ EOF
   fi
 fi
 
+##########################################
+# libewf probe
+if test "$libewf" != "no" ; then
+  cat > $TMPC <<EOF
+#include <libewf.h>
+int main(void) {
+    (void) libewf_get_version();
+    return 0;
+}
+EOF
+  ewf_libs="-lewf"
+  if compile_prog "" "$ewf_libs" ; then
+    libewf=yes
+    libs_tools="$ewf_libs $libs_tools"
+    libs_softmmu="$ewf_libs $libs_softmmu"
+  else
+    if test "$libewf" = "yes" ; then
+      feature_not_found "libewf backend support"
+    fi
+    libewf=no
+  fi
+fi
+
 #
 # Check for xxxat() functions when we are building linux-user
 # emulator.  This is done because older glibc versions don't
@@ -3413,6 +3443,7 @@ echo "coroutine backend $coroutine"
 echo "GlusterFS support $glusterfs"
 echo "virtio-blk-data-plane $virtio_blk_data_plane"
 echo "HANDLE.NET support $handlenet"
+echo "libewf support    $libewf"
 echo "gcov              $gcov_tool"
 echo "gcov enabled      $gcov"
 
@@ -3769,6 +3800,10 @@ fi
 
 if test "$handlenet" = "yes" ; then
   echo "CONFIG_HANDLENET=y" >> $config_host_mak
+fi
+
+if test "$libewf" = "yes" ; then
+  echo "CONFIG_LIBEWF=y" >> $config_host_mak
 fi
 
 # USB host support
